@@ -14,13 +14,15 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 [application]
 
-config/name="two-worlds-dark - Prototype concept"
+config/name="Two Worlds Dark - v1.1"
+config/version="1.1"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 
 [autoload]
 
 GameState="*res://autoload/game_state.gd"
+Sfx="*res://autoload/sfx.gd"
 
 [display]
 

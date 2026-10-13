@@ -13,6 +13,15 @@ var visual_combat := false
 var threats: Array = []
 var _token := 0
 
+## Persistent progress. Survives scene reloads (death / resting at a lantern).
+var checkpoint := "chapel"
+var weapon := "fists"
+var flags := {}
+var vials_max := 4
+var show_title := true
+## Generated textures, sprite sheets and sounds are cached here so reloads are instant.
+var cache := {}
+
 const ACTIONS := {
 	"move_left": [KEY_A, KEY_LEFT],
 	"move_right": [KEY_D, KEY_RIGHT],
@@ -23,6 +32,8 @@ const ACTIONS := {
 	"heavy_attack": [KEY_K],
 	"lock_on": [KEY_Q],
 	"interact": [KEY_E],
+	"heal": [KEY_F],
+	"pause": [KEY_ESCAPE],
 }
 
 func _ready() -> void:
@@ -47,6 +58,8 @@ func _setup_input() -> void:
 	_add_joy_button("roll", JOY_BUTTON_B)
 	_add_joy_button("lock_on", JOY_BUTTON_RIGHT_STICK)
 	_add_joy_button("interact", JOY_BUTTON_A)
+	_add_joy_button("heal", JOY_BUTTON_LEFT_SHOULDER)
+	_add_joy_button("pause", JOY_BUTTON_START)
 	_add_joy_axis("move_left", JOY_AXIS_LEFT_X, -1.0)
 	_add_joy_axis("move_right", JOY_AXIS_LEFT_X, 1.0)
 	_add_joy_axis("move_up", JOY_AXIS_LEFT_Y, -1.0)
@@ -68,6 +81,19 @@ func reset() -> void:
 	threats.clear()
 	mode = Mode.EXPLORE
 	visual_combat = false
+
+## New game: forget all progress (used when returning to the title after the ending).
+func reset_progress() -> void:
+	checkpoint = "chapel"
+	weapon = "fists"
+	flags.clear()
+	show_title = true
+
+func flag(name: String) -> bool:
+	return flags.get(name, false)
+
+func set_flag(name: String, value := true) -> void:
+	flags[name] = value
 
 func add_threat(e: Node) -> void:
 	if not threats.has(e):
