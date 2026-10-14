@@ -23,6 +23,11 @@ func _ready() -> void:
 	add_child(music)
 	_task = WorkerThreadPool.add_task(_generate_all, false, "sfx")
 
+func _exit_tree() -> void:
+	if _task != -1:
+		WorkerThreadPool.wait_for_task_completion(_task)
+		_task = -1
+
 func ready_now() -> bool:
 	return _task == -1 or WorkerThreadPool.is_task_completed(_task)
 
@@ -84,6 +89,9 @@ func _generate_all() -> void:
 	call_deferred("_install", nb)
 
 func _install(nb: Dictionary) -> void:
+	if _task != -1:
+		WorkerThreadPool.wait_for_task_completion(_task)
+		_task = -1
 	bank = nb
 	if _music_name != "" and not music.playing and bank.has(_music_name):
 		music.stream = bank[_music_name]

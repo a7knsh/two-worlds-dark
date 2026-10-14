@@ -45,6 +45,8 @@ func _ready() -> void:
 			await _play()
 		"boss":
 			await _boss()
+		"camera":
+			await _camera()
 	get_tree().quit()
 
 func _intro() -> void:
@@ -144,3 +146,23 @@ func _boss() -> void:
 	tp(Vector3(0, 2.1, -78))
 	await wait_s(1.0)
 	await shot("b_portal")
+
+func _camera() -> void:
+	await wait_s(3.0)
+	var rig: CameraRig = main.rig
+	tp(Vector3(0, 0.1, 64))
+	rig.yaw = deg_to_rad(135)
+	await wait_s(1.0)
+	await shot("c_chapel_rotated")
+	tp(Vector3(0, 0.1, 30))
+	rig.yaw = deg_to_rad(-60)
+	rig.explore_pitch = -35.0
+	rig.explore_zoom = 0.75
+	await wait_s(1.0)
+	await shot("c_hall_rotated_zoom")
+	tp(Vector3(-6, 0.1, -6))
+	rig.yaw = deg_to_rad(90)
+	rig.explore_pitch = -60.0
+	rig.explore_zoom = 1.3
+	await wait_s(1.0)
+	await shot("c_graveyard_rotated")

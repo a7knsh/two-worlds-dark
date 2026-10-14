@@ -23,10 +23,16 @@ var show_title := true
 var cache := {}
 
 const ACTIONS := {
-	"move_left": [KEY_A, KEY_LEFT],
-	"move_right": [KEY_D, KEY_RIGHT],
-	"move_up": [KEY_W, KEY_UP],
-	"move_down": [KEY_S, KEY_DOWN],
+	"move_left": [KEY_A],
+	"move_right": [KEY_D],
+	"move_up": [KEY_W],
+	"move_down": [KEY_S],
+	"cam_left": [KEY_LEFT],
+	"cam_right": [KEY_RIGHT],
+	"cam_up": [KEY_UP],
+	"cam_down": [KEY_DOWN],
+	"zoom_in": [KEY_EQUAL, KEY_KP_ADD],
+	"zoom_out": [KEY_MINUS, KEY_KP_SUBTRACT],
 	"roll": [KEY_SPACE],
 	"attack": [KEY_J],
 	"heavy_attack": [KEY_K],

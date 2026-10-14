@@ -53,6 +53,10 @@ var _lock_marker: Sprite3D
 ## In cutscenes the story drives the player: walk_to / face.
 var script_target := Vector3.INF
 
+func _exit_tree() -> void:
+    # never leave the world stuck in hitstop slow-motion
+    Engine.time_scale = 1.0
+
 func _ready() -> void:
     add_to_group("player")
     collision_layer = 2
@@ -407,8 +411,9 @@ func _do_hit() -> void:
         _hitstop(0.09 if attack_heavy else 0.05)
 
 func _hitstop(dur: float) -> void:
+    var tree := get_tree()
     Engine.time_scale = 0.05
-    await get_tree().create_timer(dur, true, false, true).timeout
+    await tree.create_timer(dur, true, false, true).timeout
     if Engine.time_scale < 0.5:
         Engine.time_scale = 1.0
 

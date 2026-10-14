@@ -50,7 +50,9 @@ void fragment() {
 """
 
 var mats := {}
+## Walls that can be cut down in exploration: [mesh, height, end_a(Vector2), end_b(Vector2), k, base_y]
 var _cut: Array = []
+var _world_combat := false
 var _flicker: Array = []
 var _time := 0.0
 var interactables: Array = []
@@ -128,12 +130,12 @@ func build() -> void:
 
 func set_world(combat: bool) -> void:
     Tex.set_world(combat)
-    for c: Array in _cut:
-        var mi: MeshInstance3D = c[0]
-        var hgt: float = c[1]
-        var k := 1.0 if combat else 0.16
-        mi.scale.y = k
-        mi.position.y = -hgt * 0.5 * (1.0 - k)
+    _world_combat = combat
+    if combat:
+        # the 3D camera has a spring arm, so walls stand at full height in the Flesh
+        for c: Array in _cut:
+            c[4] = 1.0
+            _apply_cut(c)
     if env:
         if combat:
             env.fog_light_color = Color(0.12, 0.07, 0.07)
@@ -151,6 +153,39 @@ func set_world(combat: bool) -> void:
             env.adjustment_saturation = 0.7
             env.adjustment_contrast = 1.0
             moon.light_color = Color(0.55, 0.65, 1.0)
+
+## Exploration cutaway: walls standing between the camera and the player sink to stubs,
+## from whatever angle the player has turned the camera.
+func update_cutaway(player_pos: Vector3, back: Vector3, delta: float) -> void:
+    if _world_combat:
+        return
+    var p := Vector2(player_pos.x, player_pos.z)
+    var b := Vector2(back.x, back.z).normalized()
+    var r := Vector2(-b.y, b.x)
+    var rate := 1.0 - exp(-10.0 * delta)
+    for c: Array in _cut:
+        var a: Vector2 = c[2]
+        var e: Vector2 = c[3]
+        var ab := e - a
+        var t := 0.0
+        if ab.length_squared() > 0.0001:
+            t = clampf((p - a).dot(ab) / ab.length_squared(), 0.0, 1.0)
+        var d := a + ab * t - p
+        var along := d.dot(b)
+        var side := absf(d.dot(r))
+        var want := 0.16 if along > -0.6 and along < 10.0 and side < 4.0 else 1.0
+        var k: float = c[4]
+        if absf(k - want) > 0.001:
+            c[4] = lerpf(k, want, rate)
+            _apply_cut(c)
+
+func _apply_cut(c: Array) -> void:
+    var mi: MeshInstance3D = c[0]
+    var hgt: float = c[1]
+    var k: float = c[4]
+    var base_y: float = c[5]
+    mi.scale.y = k
+    mi.position.y = base_y - hgt * 0.5 * (1.0 - k)
 
 func zone_at(p: Vector3) -> Array:
     for z: Array in ZONES:
@@ -220,7 +255,10 @@ func _box(pos: Vector3, size: Vector3, kind: String, collide := true, cut := fal
         mi.rotation_degrees = rot
         add_child(mi)
     if cut:
-        _cut.append([mi, size.y])
+        var bas := Basis(Vector3.UP, deg_to_rad(rot.y))
+        var long_axis := bas * (Vector3.RIGHT * size.x * 0.5 if size.x >= size.z else Vector3.BACK * size.z * 0.5)
+        _cut.append([mi, size.y, Vector2(pos.x - long_axis.x, pos.z - long_axis.z),
+            Vector2(pos.x + long_axis.x, pos.z + long_axis.z), 1.0, mi.position.y])
     return mi
 
 func _floor(x0: float, x1: float, z0: float, z1: float, top: float, kind: String, thick := 1.0) -> void:
@@ -231,7 +269,7 @@ func _wall(x0: float, z0: float, x1: float, z1: float, h: float, kind := "brick"
     var t := 0.8
     var ew := absf(z1 - z0) < 0.01
     var size := Vector3(absf(x1 - x0) + t, h, t) if ew else Vector3(t, h, absf(z1 - z0) + t)
-    _box(Vector3((x0 + x1) * 0.5, base + h * 0.5, (z0 + z1) * 0.5), size, kind, true, ew and not keep_full)
+    _box(Vector3((x0 + x1) * 0.5, base + h * 0.5, (z0 + z1) * 0.5), size, kind, true, not keep_full)
     # a darker plinth gives walls some weight
     var plinth := size + Vector3(0.12, 0, 0.12)
     plinth.y = 0.35
@@ -558,7 +596,8 @@ func _gate(gname: String, center: Vector3, width: float) -> void:
         bar.material_override = mats["iron"]
         bar.position = Vector3(x, 2.0, 0)
         g.add_child(bar)
-        _cut.append([bar, 4.0])
+        var bp := center + Vector3(x, 0, 0)
+        _cut.append([bar, 4.0, Vector2(bp.x, bp.z), Vector2(bp.x, bp.z), 1.0, bar.position.y])
     for y in [0.4, 1.6, 2.8]:
         var rail := MeshInstance3D.new()
         var rm := BoxMesh.new()
@@ -821,7 +860,7 @@ func _arena() -> void:
             continue  # entrance (south) and the Sundered Gate (north)
         var p := c + dir * r
         var length := TAU * r / segs + 0.4
-        var south := dir.z > 0.2
+        var south := true  # any segment can stand between the (rotatable) camera and the player
         _box(p + Vector3(0, 3.0, 0), Vector3(length, 6.0, 1.0), "brick", true, south, Vector3(0, rad_to_deg(a), 0))
         if i % 2 == 1:
             _box(p + Vector3(0, 3.2, 0) - dir * 0.7, Vector3(0.9, 6.4, 0.9), "moss", true, south, Vector3(0, rad_to_deg(a), 0))

@@ -142,6 +142,9 @@ func _restore_world_state() -> void:
     if GameState.flag("boss_dead"):
         level.open_gate("arena", true)
         level.set_fog(false)
+        for it: Interactable in level.interactables:
+            if it.kind == "fog":
+                it.enabled = false
         level.set_portal(true)
         for it: Interactable in level.interactables:
             if it.kind == "portal":
@@ -241,7 +244,14 @@ func _on_pause_pressed() -> void:
     if (flow == Flow.PLAY or _paused) and not cinema.active:
         _toggle_pause()
 
-func _process(_delta: float) -> void:
+func _unhandled_input(event: InputEvent) -> void:
+    # clicking into the game window grabs the mouse for camera control (ESC releases it)
+    if flow == Flow.PLAY and not _paused and event is InputEventMouseButton and event.is_pressed() \
+            and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+        Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+func _process(delta: float) -> void:
+    level.update_cutaway(player.global_position, rig.back_dir(), delta)
     if flow == Flow.PLAY:
         var it := player.nearest_interactable() if player.state == Player.State.FREE else null
         hud.set_prompt(it.prompt if it else "")
@@ -295,7 +305,7 @@ func _on_interact(it: Interactable) -> void:
         "lantern":
             _rest(it)
         "fog":
-            if boss and boss.state == Boss.State.DORMANT:
+            if is_instance_valid(boss) and boss.state == Boss.State.DORMANT:
                 flow = Flow.CUTSCENE
                 hud.set_prompt("")
                 await Story.boss_intro(self)
@@ -333,16 +343,25 @@ func _take_weapon(id: String) -> void:
         Sfx.play("bell", -6.0, 0.6)
         _wake_hall()
 
+## Hall husks still in the world. Dead ones are freed after they sink, so never put a
+## stale reference into a typed variable (Godot raises a script error for that).
+func _live_hall_enemies() -> Array[Enemy]:
+    var out: Array[Enemy] = []
+    for e: Variant in hall_enemies:
+        if is_instance_valid(e):
+            out.append(e as Enemy)
+    return out
+
 func _wake_hall() -> void:
     var d := 0.3
-    for e: Enemy in hall_enemies:
-        if is_instance_valid(e) and e.state == Enemy.State.DORMANT:
+    for e: Enemy in _live_hall_enemies():
+        if e.state == Enemy.State.DORMANT:
             e.wake(d)
             d += 0.7
 
 func _on_hall_enemy_died(_e: Enemy) -> void:
-    for e: Enemy in hall_enemies:
-        if is_instance_valid(e) and e.is_alive():
+    for e: Enemy in _live_hall_enemies():
+        if e.is_alive():
             return
     if GameState.flag("hall_cleared"):
         return
@@ -407,6 +426,9 @@ func _on_boss_defeated() -> void:
         boss.crumble()
     await get_tree().create_timer(3.5).timeout
     level.set_fog(false)
+    for it: Interactable in level.interactables:
+        if it.kind == "fog":
+            it.enabled = false
     level.open_gate("arena")
     level.set_portal(true)
     for it: Interactable in level.interactables:

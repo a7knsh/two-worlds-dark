@@ -350,7 +350,7 @@ func take_damage(amount: float, _from: Node3D = null, poise_dmg := 0.0) -> void:
         hum.glow_amount = 0.0
         hum.trail_on = false
         hum.anim_speed = 1.0
-        if _nova_disc and is_instance_valid(_nova_disc):
+        if is_instance_valid(_nova_disc):
             _nova_disc.queue_free()
         _set_state(State.STAGGER)
         hum.play("stagger", 2.2, 0.05)
@@ -366,7 +366,7 @@ func _begin_phase2() -> void:
     hum.glow_amount = 0.0
     hum.trail_on = false
     hum.anim_speed = 1.0
-    if _nova_disc and is_instance_valid(_nova_disc):
+    if is_instance_valid(_nova_disc):
         _nova_disc.queue_free()
     _set_state(State.PHASE)
     _flinch = false
@@ -410,7 +410,7 @@ func _die() -> void:
     hum.glow_amount = 0.0
     hum.trail_on = false
     hum.anim_speed = 1.0
-    if _nova_disc and is_instance_valid(_nova_disc):
+    if is_instance_valid(_nova_disc):
         _nova_disc.queue_free()
     GameState.remove_threat(self)
     hum.play("death", 3.2, 0.1)

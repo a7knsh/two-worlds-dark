@@ -63,13 +63,13 @@ static func intro(m: Node) -> void:
     c.shot(Vector3(-0.2, 0.55, 61.2), Vector3(-2.3, 1.0, 64.0))
     c.drift(Vector3(0.3, 0.7, 61.6), Vector3(-2.0, 1.3, 64.0), 4.0)
     await c.wait(3.6)
-    if beast and not c.skipped:
+    if is_instance_valid(beast) and not c.skipped:
         var tw2 := beast.create_tween()
         tw2.tween_property(beast, "global_position", Vector3(-1.0, 0.0, 64.7), 2.6)
         Sfx.play("growl", 0.0, 0.55)
     c.shot(Vector3(1.9, 1.5, 61.9), Vector3(-0.8, 0.9, 64.8))
     await c.wait(2.6)
-    if beast and not c.skipped:
+    if is_instance_valid(beast) and not c.skipped:
         beast.play("reach", 1.4, 0.15)
         beast.face_yaw = deg_to_rad(-80.0)
     c.drift(Vector3(1.4, 1.3, 62.5), Vector3(-0.5, 1.1, 64.9), 1.6)
@@ -78,7 +78,7 @@ static func intro(m: Node) -> void:
     hud.flash(Color(0.85, 0.9, 1.0, 1.0), 1.6)
     Sfx.play("ash", 0.0, 0.8)
     Sfx.play("bell", -2.0, 1.2)
-    if beast:
+    if is_instance_valid(beast):
         Fx.ash(beast.global_position + Vector3(0, 0.8, 0), 70, Color(0.85, 0.88, 1.0))
         beast.queue_free()
     m.set_world_look(false)
@@ -90,7 +90,7 @@ static func intro(m: Node) -> void:
     await c.say("The Veilkeeper", "Go now. Take up steel in the Hall of Arms...\nand find the Warden who keeps the Sundered Gate.", 5.2)
     await c.say("The Veilkeeper", "End this long night, Pale One.", 3.2)
     # --- wake up
-    if beast and is_instance_valid(beast):
+    if is_instance_valid(beast):
         beast.queue_free()
     keeper.play("sit", 1.0, 0.2)
     hud.fade.color.a = 1.0

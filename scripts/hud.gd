@@ -391,7 +391,7 @@ func _build_pause() -> void:
         b.add_theme_font_size_override("font_size", 22)
         b.pressed.connect(func() -> void: pause_choice.emit(pair[1]))
         vb.add_child(b)
-    var help := _label("WASD move   Mouse / right stick: camera (3D)\nSPACE roll   J / LMB light   K / RMB heavy\nQ lock-on   F drink Blood Vial   E interact   ESC pause\n\nGamepad: B roll, X light, Y heavy, R3 lock-on, LB heal, A interact", 15, Color(0.75, 0.72, 0.66))
+    var help := _label("WASD move   Mouse / arrow keys / right stick: rotate + tilt camera   Wheel or +/-: zoom\nSPACE roll   J / LMB light   K / RMB heavy\nQ lock-on   F drink Blood Vial   E interact   ESC pause\n\nGamepad: B roll, X light, Y heavy, R3 lock-on, LB heal, A interact", 15, Color(0.75, 0.72, 0.66))
     help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     vb.add_child(help)
 

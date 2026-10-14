@@ -32,7 +32,8 @@ There are no imported assets.
 | Action | Keyboard / mouse | Gamepad |
 |---|---|---|
 | Move | WASD | Left stick |
-| Camera (3D only) | Mouse | Right stick |
+| Rotate / tilt camera (both worlds) | Mouse (click the window to grab it) or arrow keys | Right stick |
+| Zoom | Mouse wheel or + / - | |
 | Roll | Space | B |
 | Light attack | J / Left mouse | X |
 | Heavy attack | K / Right mouse | Y |

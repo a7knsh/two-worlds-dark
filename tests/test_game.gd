@@ -121,6 +121,47 @@ func _run() -> void:
 	await wait_s(0.1)
 	check(not get_tree().paused and not main.hud.pause_panel.visible, "ESC resumes")
 
+	# --- camera: rotate, tilt and zoom in the Veil
+	var rig: CameraRig = main.rig
+	var yaw0 := rig.yaw
+	Input.action_press("cam_right")
+	await wait_s(0.5)
+	Input.action_release("cam_right")
+	check(absf(rig.yaw - yaw0) > 0.5, "arrow keys rotate the camera (yaw %.2f -> %.2f)" % [yaw0, rig.yaw])
+	var p0 := rig.explore_pitch
+	Input.action_press("cam_up")
+	await wait_s(0.3)
+	Input.action_release("cam_up")
+	check(rig.explore_pitch != p0, "arrow keys tilt the camera")
+	var size0 := rig.cam.size
+	var wheel := InputEventMouseButton.new()
+	wheel.button_index = MOUSE_BUTTON_WHEEL_DOWN
+	wheel.pressed = true
+	for i in 4:
+		Input.parse_input_event(wheel)
+	await wait_s(0.6)
+	check(rig.cam.size > size0 + 1.0, "mouse wheel zooms (%.1f -> %.1f)" % [size0, rig.cam.size])
+	# walk with the camera turned: movement follows the camera
+	var before := player.global_position
+	Input.action_press("move_up")
+	await wait_s(0.4)
+	Input.action_release("move_up")
+	var moved := player.global_position - before
+	moved.y = 0.0
+	var cam_fwd := -rig.back_dir()
+	check(moved.normalized().dot(cam_fwd) > 0.8, "W walks away from the rotated camera")
+	# cutaway follows the camera: something between camera and player is cut down
+	tp(Vector3(0, 0.1, 64.0))
+	await wait_s(0.8)
+	var cut_any := false
+	for c: Array in main.level._cut:
+		if (c[4] as float) < 0.5:
+			cut_any = true
+	check(cut_any, "walls between the camera and the player are cut away")
+	rig.yaw = 0.0
+	rig.explore_zoom = 1.0
+	rig.explore_pitch = -48.0
+
 	# --- ground message
 	tp(Vector3(0, 0.1, 60.6))
 	await wait_s(0.2)
@@ -216,11 +257,26 @@ func _run() -> void:
 	check(player.vials == v0 - 1, "drinking uses a Blood Vial")
 	check(player.hp > 30.0, "Blood Vial heals (%.0f)" % player.hp)
 
-	# --- clear the hall -> gate opens -> back to explore
-	for e: Enemy in main.hall_enemies:
-		if e.is_alive():
-			e.take_damage(999.0, player)
-	await wait_s(5.0)
+	# --- clear the hall one husk at a time (regression: killing a husk after an earlier one's
+	# body was freed used to raise "Trying to assign invalid previously freed instance")
+	for i in 3:
+		player.hp = player.max_hp
+		var victim: Enemy = null
+		for e: Variant in main.hall_enemies:
+			if is_instance_valid(e) and (e as Enemy).is_alive():
+				victim = e
+				break
+		if victim:
+			victim.take_damage(999.0, player)
+		for k in 6:
+			await wait_s(0.7)
+			player.hp = player.max_hp
+	var freed := 0
+	for e: Variant in main.hall_enemies:
+		if not is_instance_valid(e):
+			freed += 1
+	check(freed >= 2, "dead husks sink and are freed (%d)" % freed)
+	await wait_s(1.0)
 	check(gs.flag("hall_cleared"), "hall cleared")
 	check(main.level.gates["hall"].position.y > 3.0, "hall gate opened")
 	check(gs.mode == 0, "back to EXPLORE after the fight")
